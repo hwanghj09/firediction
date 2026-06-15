@@ -15,6 +15,7 @@ const state = {
   wheelFrame: 0,
   wheelDelta: 0,
   wheelPoint: null,
+  detailLevel: "",
 };
 
 const els = {
@@ -28,6 +29,7 @@ const els = {
 
 const regionById = new Map();
 const pathById = new Map();
+const pathLodById = new Map();
 const levelColors = new Map();
 
 function formatNumber(value, digits = 0) {
@@ -56,6 +58,56 @@ function getRisk(region) {
 
 function colorFor(region) {
   return levelColors.get(getRisk(region).level) || "#9aa69a";
+}
+
+function simplifyPathData(pathData, stride) {
+  if (stride <= 1) return pathData;
+
+  const tokens = pathData.match(/[MLZ]|-?\d+(?:\.\d+)?/g) || [];
+  let index = 0;
+  const rings = [];
+
+  while (index < tokens.length) {
+    const token = tokens[index++];
+    if (token !== "M") continue;
+
+    const ring = [];
+    ring.push([Number(tokens[index++]), Number(tokens[index++])]);
+    while (index < tokens.length && tokens[index] !== "Z" && tokens[index] !== "M") {
+      if (tokens[index] === "L") {
+        index += 1;
+      }
+      ring.push([Number(tokens[index++]), Number(tokens[index++])]);
+    }
+    if (tokens[index] === "Z") {
+      index += 1;
+    }
+    rings.push(ring);
+  }
+
+  return rings
+    .map((ring) => {
+      if (ring.length <= 8) {
+        return serializeRing(ring);
+      }
+
+      const simplified = [ring[0]];
+      for (let pointIndex = stride; pointIndex < ring.length - 1; pointIndex += stride) {
+        simplified.push(ring[pointIndex]);
+      }
+      const last = ring[ring.length - 1];
+      const previous = simplified[simplified.length - 1];
+      if (previous[0] !== last[0] || previous[1] !== last[1]) {
+        simplified.push(last);
+      }
+      return serializeRing(simplified);
+    })
+    .join("");
+}
+
+function serializeRing(points) {
+  const [first, ...rest] = points;
+  return `M${first[0]} ${first[1]}${rest.map(([x, y]) => `L${x} ${y}`).join("")}Z`;
 }
 
 function init() {
@@ -128,7 +180,13 @@ function renderMap() {
 
   data.regions.forEach((region) => {
     const path = document.createElementNS(SVG_NS, "path");
-    path.setAttribute("d", region.path);
+    const lod = {
+      low: simplifyPathData(region.path, 9),
+      medium: simplifyPathData(region.path, 4),
+      high: region.path,
+    };
+    pathLodById.set(region.id, lod);
+    path.setAttribute("d", lod.low);
     path.setAttribute("class", "region");
     path.setAttribute("tabindex", "0");
     path.setAttribute("role", "button");
@@ -155,6 +213,7 @@ function renderMap() {
   });
 
   els.mapRegions.replaceChildren(fragment);
+  updateMapDetailLevel(true);
 }
 
 function bindEvents() {
@@ -192,6 +251,7 @@ function updateMapStyles() {
 function applyViewBox() {
   const box = state.viewBox;
   els.koreaMap.setAttribute("viewBox", `${box.x} ${box.y} ${box.width} ${box.height}`);
+  updateMapDetailLevel();
 }
 
 function currentViewBox() {
@@ -287,8 +347,8 @@ function zoomMap(event) {
 function applyZoom(delta, cursor) {
   if (!cursor) return;
   const box = currentViewBox();
-  const factor = Math.exp(Math.sign(delta) * Math.min(0.28, Math.abs(delta) / 520));
-  const minWidth = state.defaultViewBox.width * 0.18;
+  const factor = Math.exp(Math.sign(delta) * Math.min(0.62, Math.abs(delta) / 210));
+  const minWidth = state.defaultViewBox.width * 0.08;
   const maxWidth = state.defaultViewBox.width * 2.4;
   const nextWidth = Math.max(minWidth, Math.min(maxWidth, box.width * factor));
   const nextHeight = nextWidth * (state.defaultViewBox.height / state.defaultViewBox.width);
@@ -321,6 +381,28 @@ function resetMapView() {
   state.wheelPoint = null;
   state.viewBox = { ...state.defaultViewBox };
   applyViewBox();
+}
+
+function getDetailLevel() {
+  const zoom = state.defaultViewBox.width / currentViewBox().width;
+  if (zoom < 1.45) return "low";
+  if (zoom < 2.55) return "medium";
+  return "high";
+}
+
+function updateMapDetailLevel(force = false) {
+  if (!state.defaultViewBox || !state.viewBox) return;
+  const nextLevel = getDetailLevel();
+  if (!force && nextLevel === state.detailLevel) return;
+
+  state.detailLevel = nextLevel;
+  data.regions.forEach((region) => {
+    const path = pathById.get(region.id);
+    const lod = pathLodById.get(region.id);
+    if (path && lod) {
+      path.setAttribute("d", lod[nextLevel]);
+    }
+  });
 }
 
 function selectRegion(id) {
