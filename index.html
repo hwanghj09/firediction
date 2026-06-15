@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Firediction | 산불 위험도 예측</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">AI 산불 위험도 예측</p>
+          <h1>Firediction</h1>
+        </div>
+        <div class="source-pill" id="sourceInfo">데이터 불러오는 중</div>
+      </header>
+
+      <section class="map-stage" aria-label="우리나라 시군구별 산불 위험도 지도">
+        <div class="toolbar">
+          <label class="month-control">
+            <span>예측 월</span>
+            <select id="monthSelect" aria-label="예측 월 선택"></select>
+          </label>
+        </div>
+
+        <svg id="koreaMap" role="img" aria-label="시군구별 산불 위험도 색상 지도">
+          <g id="mapRegions"></g>
+        </svg>
+
+        <ul class="legend" id="legend"></ul>
+        <div class="tooltip" id="tooltip" hidden></div>
+      </section>
+    </main>
+
+    <script src="data/risk-data.js"></script>
+    <script src="app.js"></script>
+  </body>
+</html>
