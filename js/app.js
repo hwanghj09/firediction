@@ -4,7 +4,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 
 const state = {
   riskKey: "",
-  selectedId: data?.regions?.[0]?.id || "",
+  selectedId: "",
   viewBox: null,
   defaultViewBox: null,
   isPanning: false,
@@ -32,6 +32,7 @@ const els = {
   graphLink: document.querySelector("#graphLink"),
   koreaMap: document.querySelector("#koreaMap"),
   mapRegions: document.querySelector("#mapRegions"),
+  detailPanel: document.querySelector("#detailPanel"),
   tooltip: document.querySelector("#tooltip"),
   legend: document.querySelector("#legend"),
 };
@@ -63,6 +64,12 @@ function escapeHtml(value) {
 
 function getRisk(region) {
   return region.risk[state.riskKey] || Object.values(region.risk)[0];
+}
+
+function getRegionRisks(region) {
+  return getAvailableMonths()
+    .map(({ key, month }) => ({ key, month, risk: region.risk[key] }))
+    .filter((item) => item.risk);
 }
 
 function colorFor(region) {
@@ -218,13 +225,6 @@ function renderMap() {
     path.dataset.id = region.id;
     path.style.setProperty("--month-delay", `${monthAnimationDelay(region)}ms`);
     path.style.fill = colorFor(region);
-    path.addEventListener("click", (event) => {
-      if (state.didPan) {
-        event.preventDefault();
-        return;
-      }
-      selectRegion(region.id);
-    });
     path.addEventListener("keydown", (event) => {
       if (event.key === "Enter" || event.key === " ") {
         event.preventDefault();
@@ -273,6 +273,7 @@ function bindEvents() {
 function refresh() {
   updateMapStyles();
   updateGraphLink();
+  renderDetailPanel();
   updatePinnedTooltip();
 }
 
@@ -304,6 +305,123 @@ function updateMapStyles() {
       `${region.province} ${region.city} 산불 위험도 ${risk.score}점 ${risk.level}`,
     );
   });
+}
+
+function renderDetailPanel() {
+  const region = regionById.get(state.selectedId);
+  if (!region) {
+    els.detailPanel.innerHTML = `
+      <p class="detail-empty">지도를 클릭하면 선택 지역 상세 정보가 표시됩니다.</p>
+    `;
+    return;
+  }
+
+  const risk = getRisk(region);
+  const weather = risk.weather || {};
+  const color = colorFor(region);
+  const yearlyCounts = Object.entries(region.yearlyFireCounts || {});
+  const latestYear = yearlyCounts[yearlyCounts.length - 1];
+  const latestYearText = latestYear ? `${latestYear[0]}년 ${formatNumber(latestYear[1])}건` : "자료 없음";
+
+  els.detailPanel.innerHTML = `
+    <div class="detail-head">
+      <div>
+        <p class="detail-kicker">선택 지역 상세</p>
+        <h2>${escapeHtml(region.city)}</h2>
+        <p>${escapeHtml(region.province)} · ${risk.month}월 예측</p>
+      </div>
+      <span class="detail-level" style="background:${color}">${escapeHtml(risk.level)}</span>
+    </div>
+
+    <div class="detail-score-row">
+      <strong>${formatNumber(risk.score, 1)}점</strong>
+      <span>위험도</span>
+    </div>
+    <div class="detail-track" aria-hidden="true">
+      <i style="width:${risk.score}%; background:${color}"></i>
+    </div>
+
+    <div class="detail-chart">
+      <div class="detail-section-title">
+        <strong>월별 변화</strong>
+        <span>6월~12월</span>
+      </div>
+      ${renderMiniLineChart(region)}
+    </div>
+
+    <div class="detail-grid" aria-label="선택 지역 기상 요약">
+      <div>
+        <span>기온</span>
+        <strong>${formatNumber(weather.airTemperature, 1)}°C</strong>
+      </div>
+      <div>
+        <span>습도</span>
+        <strong>${formatNumber(weather.humidity, 1)}%</strong>
+      </div>
+      <div>
+        <span>강수량</span>
+        <strong>${formatNumber(weather.rainfall, 1)}mm</strong>
+      </div>
+    </div>
+
+    <div class="detail-history">
+      <div class="detail-section-title">
+        <strong>산불 이력 요약</strong>
+      </div>
+      <dl>
+        <div>
+          <dt>발생 이력</dt>
+          <dd>${formatNumber(region.fireCount)}건</dd>
+        </div>
+        <div>
+          <dt>피해면적 합계</dt>
+          <dd>${formatNumber(region.fireArea, 2)}ha</dd>
+        </div>
+        <div>
+          <dt>집중 월</dt>
+          <dd>${region.peakMonth ? `${region.peakMonth}월` : "자료 없음"}</dd>
+        </div>
+        <div>
+          <dt>최근 연도</dt>
+          <dd>${escapeHtml(latestYearText)}</dd>
+        </div>
+      </dl>
+    </div>
+  `;
+}
+
+function renderMiniLineChart(region) {
+  const items = getRegionRisks(region);
+  if (!items.length) return "<p class='detail-empty'>월별 위험도 자료가 없습니다.</p>";
+
+  const width = 260;
+  const height = 90;
+  const pad = 12;
+  const maxScore = Math.max(100, ...items.map((item) => item.risk.score));
+  const step = items.length > 1 ? (width - pad * 2) / (items.length - 1) : 0;
+  const points = items.map((item, index) => {
+    const x = pad + step * index;
+    const y = height - pad - (item.risk.score / maxScore) * (height - pad * 2);
+    return { ...item, x, y };
+  });
+  const polyline = points.map((point) => `${point.x},${point.y}`).join(" ");
+
+  return `
+    <svg class="detail-mini-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="선택 지역 월별 위험도 변화">
+      <line x1="${pad}" y1="${height - pad}" x2="${width - pad}" y2="${height - pad}" />
+      <polyline points="${polyline}" />
+      ${points
+        .map(
+          (point) => `
+            <g class="${point.key === state.riskKey ? "active" : ""}">
+              <circle cx="${point.x}" cy="${point.y}" r="${point.key === state.riskKey ? 4.2 : 3}" />
+              <text x="${point.x}" y="${height - 1}">${point.month}</text>
+            </g>
+          `,
+        )
+        .join("")}
+    </svg>
+  `;
 }
 
 function monthAnimationDelay(region) {
@@ -345,6 +463,7 @@ function pointInSvg(event) {
 
 function startPan(event) {
   if (event.button !== 0) return;
+  const regionPath = event.target.closest?.(".region");
   els.koreaMap.setPointerCapture(event.pointerId);
   const point = pointInSvg(event);
   state.isPanning = true;
@@ -356,6 +475,7 @@ function startPan(event) {
     x: point.x,
     y: point.y,
     viewBox: { ...state.viewBox },
+    regionId: regionPath?.dataset.id || "",
   };
   els.koreaMap.classList.add("panning");
 }
@@ -382,12 +502,16 @@ function panMap(event) {
 
 function endPan(event) {
   if (!state.isPanning) return;
+  const selectedId = event.type === "pointerup" && !state.didPan ? state.panStart?.regionId : "";
   if (state.panStart?.pointerId === event.pointerId && els.koreaMap.hasPointerCapture(event.pointerId)) {
     els.koreaMap.releasePointerCapture(event.pointerId);
   }
   state.isPanning = false;
   state.panStart = null;
   els.koreaMap.classList.remove("panning");
+  if (selectedId) {
+    selectRegion(selectedId);
+  }
   setTimeout(() => {
     state.didPan = false;
   }, 0);
@@ -487,6 +611,7 @@ function selectRegion(id) {
   state.selectedId = id;
   updateMapStyles();
   updateGraphLink();
+  renderDetailPanel();
   showPinnedTooltip(regionById.get(id));
 }
 
@@ -522,7 +647,7 @@ function searchRegion() {
 }
 
 function updateGraphLink() {
-  els.graphLink.href = `graph.html?region=${encodeURIComponent(state.selectedId)}`;
+  els.graphLink.href = state.selectedId ? `graph.html?region=${encodeURIComponent(state.selectedId)}` : "graph.html";
 }
 
 function renderTooltipContent(region) {
