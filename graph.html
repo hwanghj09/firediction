@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Firediction | 월별 위험도 그래프</title>
+    <link rel="stylesheet" href="graph.css" />
+  </head>
+  <body>
+    <main class="graph-shell">
+      <header class="graph-topbar">
+        <div>
+          <p class="eyebrow">월별 변화 그래프</p>
+          <h1>Firediction</h1>
+        </div>
+        <a class="back-link" href="index.html">지도로 돌아가기</a>
+      </header>
+
+      <section class="graph-panel">
+        <div class="graph-controls">
+          <label class="region-control">
+            <span>지역 선택</span>
+            <select id="regionSelect" aria-label="지역 선택"></select>
+          </label>
+          <div class="selected-summary" id="selectedSummary"></div>
+        </div>
+
+        <div class="chart-wrap">
+          <svg id="riskChart" role="img" aria-label="선택 지역 월별 산불 위험도 변화 그래프"></svg>
+        </div>
+      </section>
+    </main>
+
+    <script src="data/risk-data.js"></script>
+    <script src="graph.js"></script>
+  </body>
+</html>

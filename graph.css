@@ -1,0 +1,272 @@
+:root {
+  --bg: #f4f8f1;
+  --panel: #ffffff;
+  --text: #1c2b21;
+  --muted: #667066;
+  --line: #d8e2d2;
+  --accent: #167a45;
+  --shadow: 0 14px 38px rgba(42, 72, 43, 0.12);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 18% 8%, rgba(47, 191, 113, 0.12), transparent 30rem),
+    var(--bg);
+  color: var(--text);
+  font-family:
+    Inter, Pretendard, "Noto Sans KR", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+select {
+  font: inherit;
+}
+
+.graph-shell {
+  width: min(1180px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 24px 0 36px;
+}
+
+.graph-topbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.eyebrow {
+  margin: 0 0 4px;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+h1,
+p {
+  margin-top: 0;
+}
+
+h1 {
+  margin-bottom: 0;
+  font-size: clamp(2rem, 4vw, 3.7rem);
+  line-height: 0.95;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.86);
+  box-shadow: var(--shadow);
+  color: var(--muted);
+  font-weight: 800;
+  padding: 0 15px;
+  text-decoration: none;
+}
+
+.back-link:hover,
+.back-link:focus {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.graph-panel {
+  display: grid;
+  gap: 18px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: var(--shadow);
+  padding: 18px;
+}
+
+.graph-controls {
+  display: grid;
+  grid-template-columns: minmax(260px, 420px) 1fr;
+  gap: 16px;
+  align-items: end;
+}
+
+.region-control {
+  display: grid;
+  gap: 6px;
+}
+
+.region-control span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.region-control select {
+  height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdf9;
+  color: var(--text);
+  font-weight: 800;
+  outline: none;
+  padding: 0 12px;
+}
+
+.region-control select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(22, 122, 69, 0.14);
+}
+
+.selected-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+}
+
+.summary-chip {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fbfdf9;
+  color: var(--muted);
+  font-weight: 800;
+  padding: 9px 11px;
+}
+
+.chart-wrap {
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: linear-gradient(180deg, #fbfdf9 0%, #f2f8ef 100%);
+}
+
+#riskChart {
+  display: block;
+  width: 100%;
+  height: min(68vh, 620px);
+  min-height: 430px;
+}
+
+.axis {
+  stroke: #9cab9a;
+  stroke-width: 1;
+}
+
+.grid-line {
+  stroke: #d8e2d2;
+  stroke-width: 1;
+}
+
+.chart-line {
+  fill: none;
+  stroke: var(--accent);
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 5;
+}
+
+.chart-area {
+  fill: rgba(22, 122, 69, 0.1);
+}
+
+.chart-dot {
+  stroke: #ffffff;
+  stroke-width: 3;
+}
+
+.chart-label {
+  fill: var(--muted);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.score-label {
+  fill: var(--text);
+  font-size: 15px;
+  font-weight: 900;
+  text-anchor: middle;
+}
+
+@media (max-width: 760px) {
+  .graph-shell {
+    width: min(100% - 16px, 1180px);
+    padding: 14px 0 18px;
+  }
+
+  .graph-topbar,
+  .graph-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .graph-topbar {
+    align-items: start;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+
+  .eyebrow {
+    font-size: 0.74rem;
+  }
+
+  h1 {
+    font-size: 2.2rem;
+  }
+
+  .back-link {
+    width: 100%;
+    justify-content: center;
+    border-radius: 8px;
+  }
+
+  .graph-panel {
+    gap: 12px;
+    padding: 10px;
+  }
+
+  .selected-summary {
+    justify-content: flex-start;
+  }
+
+  .summary-chip {
+    border-radius: 8px;
+    font-size: 0.82rem;
+    padding: 8px 9px;
+  }
+
+  .chart-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #riskChart {
+    width: 760px;
+    max-width: none;
+    height: 440px;
+    min-height: 360px;
+  }
+
+  .chart-label {
+    font-size: 13px;
+  }
+
+  .score-label {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 420px) {
+  #riskChart {
+    width: 700px;
+    height: 400px;
+    min-height: 340px;
+  }
+}

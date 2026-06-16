@@ -22,6 +22,7 @@ const els = {
   sourceInfo: document.querySelector("#sourceInfo"),
   monthSelect: document.querySelector("#monthSelect"),
   resetViewButton: document.querySelector("#resetViewButton"),
+  graphLink: document.querySelector("#graphLink"),
   koreaMap: document.querySelector("#koreaMap"),
   mapRegions: document.querySelector("#mapRegions"),
   tooltip: document.querySelector("#tooltip"),
@@ -235,6 +236,7 @@ function bindEvents() {
 
 function refresh() {
   updateMapStyles();
+  updateGraphLink();
 }
 
 function updateMapStyles() {
@@ -411,7 +413,12 @@ function selectRegion(id) {
   if (!id || !regionById.has(id)) return;
   state.selectedId = id;
   updateMapStyles();
+  updateGraphLink();
   showPinnedTooltip(regionById.get(id));
+}
+
+function updateGraphLink() {
+  els.graphLink.href = `graph.html?region=${encodeURIComponent(state.selectedId)}`;
 }
 
 function renderTooltipContent(region) {
