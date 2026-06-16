@@ -90,6 +90,9 @@ h1 {
   top: 6px;
   right: 0;
   z-index: 5;
+  display: grid;
+  gap: 8px;
+  justify-items: stretch;
 }
 
 .month-control {
@@ -123,6 +126,25 @@ h1 {
 .month-control select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(22, 122, 69, 0.14);
+}
+
+.reset-view-button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0 14px;
+}
+
+.reset-view-button:hover,
+.reset-view-button:focus {
+  border-color: var(--accent);
+  color: var(--accent);
+  outline: none;
 }
 
 #koreaMap {

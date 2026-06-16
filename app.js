@@ -21,6 +21,7 @@ const state = {
 const els = {
   sourceInfo: document.querySelector("#sourceInfo"),
   monthSelect: document.querySelector("#monthSelect"),
+  resetViewButton: document.querySelector("#resetViewButton"),
   koreaMap: document.querySelector("#koreaMap"),
   mapRegions: document.querySelector("#mapRegions"),
   tooltip: document.querySelector("#tooltip"),
@@ -229,6 +230,7 @@ function bindEvents() {
   els.koreaMap.addEventListener("pointerleave", endPan);
   els.koreaMap.addEventListener("wheel", zoomMap, { passive: false });
   els.koreaMap.addEventListener("dblclick", resetMapView);
+  els.resetViewButton.addEventListener("click", resetMapView);
 }
 
 function refresh() {
