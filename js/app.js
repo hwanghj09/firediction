@@ -18,6 +18,7 @@ const state = {
   detailLevel: "",
   filterLevel: "all",
   searchHitId: "",
+  monthAnimationTimer: 0,
 };
 
 const els = {
@@ -215,6 +216,7 @@ function renderMap() {
     path.setAttribute("tabindex", "0");
     path.setAttribute("role", "button");
     path.dataset.id = region.id;
+    path.style.setProperty("--month-delay", `${monthAnimationDelay(region)}ms`);
     path.style.fill = colorFor(region);
     path.addEventListener("click", (event) => {
       if (state.didPan) {
@@ -242,8 +244,7 @@ function renderMap() {
 
 function bindEvents() {
   els.monthSelect.addEventListener("change", (event) => {
-    state.riskKey = event.target.value;
-    refresh();
+    changeMonth(event.target.value);
   });
 
   els.riskFilter.addEventListener("change", (event) => {
@@ -272,6 +273,22 @@ function bindEvents() {
 function refresh() {
   updateMapStyles();
   updateGraphLink();
+  updatePinnedTooltip();
+}
+
+function changeMonth(nextRiskKey) {
+  if (nextRiskKey === state.riskKey) return;
+  if (state.monthAnimationTimer) {
+    window.clearTimeout(state.monthAnimationTimer);
+  }
+
+  els.koreaMap.classList.add("month-changing");
+  state.riskKey = nextRiskKey;
+  refresh();
+  state.monthAnimationTimer = window.setTimeout(() => {
+    els.koreaMap.classList.remove("month-changing");
+    state.monthAnimationTimer = 0;
+  }, 920);
 }
 
 function updateMapStyles() {
@@ -287,6 +304,13 @@ function updateMapStyles() {
       `${region.province} ${region.city} 산불 위험도 ${risk.score}점 ${risk.level}`,
     );
   });
+}
+
+function monthAnimationDelay(region) {
+  if (!state.defaultViewBox) return 0;
+  const xRatio = region.centroid[0] / Math.max(1, state.defaultViewBox.width);
+  const yRatio = region.centroid[1] / Math.max(1, state.defaultViewBox.height);
+  return Math.round(yRatio * 170 + xRatio * 90);
 }
 
 function applyViewBox() {
@@ -558,6 +582,14 @@ function showPinnedTooltip(region) {
     clientY: rect.top + rect.height / 2,
   };
   moveTooltip(syntheticEvent);
+}
+
+function updatePinnedTooltip() {
+  if (els.tooltip.dataset.pinned !== "true") return;
+  const region = regionById.get(state.selectedId);
+  if (region) {
+    showPinnedTooltip(region);
+  }
 }
 
 init();
