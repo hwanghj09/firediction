@@ -8,6 +8,8 @@ const els = {
   regionSelect: document.querySelector("#regionSelect"),
   selectedSummary: document.querySelector("#selectedSummary"),
   chart: document.querySelector("#riskChart"),
+  weatherTableBody: document.querySelector("#weatherTableBody"),
+  regionInsight: document.querySelector("#regionInsight"),
 };
 
 const levelColors = new Map();
@@ -85,6 +87,8 @@ function render() {
   const points = getMonthlyScores(region);
   renderSummary(region, points);
   renderChart(points);
+  renderWeatherTable(points);
+  renderInsight(region, points);
 }
 
 function renderSummary(region, points) {
@@ -151,6 +155,64 @@ function renderChart(points) {
     <path class="chart-area" d="${areaPath}" />
     <path class="chart-line" d="${linePath}" />
     ${dots}
+  `;
+}
+
+function weatherValue(weather, key, unit = "", digits = 1) {
+  const value = Number(weather?.[key]);
+  if (!Number.isFinite(value)) return "-";
+  return `${formatNumber(value, digits)}${unit}`;
+}
+
+function renderWeatherTable(points) {
+  els.weatherTableBody.innerHTML = points
+    .map((point) => {
+      const weather = point.weather || {};
+      const color = levelColors.get(point.level) || "#167a45";
+      return `
+        <tr>
+          <th scope="row">${point.month}월</th>
+          <td>${formatNumber(point.score)}점</td>
+          <td><span class="level-badge" style="background:${color}">${escapeHtml(point.level)}</span></td>
+          <td>${weatherValue(weather, "airTemperature", "°C")}</td>
+          <td>${weatherValue(weather, "maxTemperature", "°C")}</td>
+          <td>${weatherValue(weather, "surfaceTemperature", "°C")}</td>
+          <td>${weatherValue(weather, "soilTemperature", "°C")}</td>
+          <td>${weatherValue(weather, "deepSoilTemperature", "°C")}</td>
+          <td>${weatherValue(weather, "humidity", "%")}</td>
+          <td>${weatherValue(weather, "rainfall", "mm")}</td>
+        </tr>
+      `;
+    })
+    .join("");
+}
+
+function renderInsight(region, points) {
+  const max = points.reduce((best, point) => (point.score > best.score ? point : best), points[0]);
+  const min = points.reduce((best, point) => (point.score < best.score ? point : best), points[0]);
+  const first = points[0];
+  const last = points[points.length - 1];
+  const change = last.score - first.score;
+  const changeText =
+    Math.abs(change) < 1
+      ? "거의 비슷하게 유지됩니다"
+      : change > 0
+        ? `${formatNumber(Math.abs(change))}점 상승합니다`
+        : `${formatNumber(Math.abs(change))}점 하락합니다`;
+  const highRiskMonths = points.filter((point) => point.score >= 50).map((point) => `${point.month}월`);
+  const highRiskText = highRiskMonths.length ? highRiskMonths.join(", ") : "없음";
+
+  els.regionInsight.innerHTML = `
+    <h3>${escapeHtml(region.province)} ${escapeHtml(region.city)} 해석</h3>
+    <p>
+      선택 기간 중 가장 높은 위험도는 ${max.month}월 ${formatNumber(max.score)}점(${escapeHtml(max.level)})이고,
+      가장 낮은 위험도는 ${min.month}월 ${formatNumber(min.score)}점(${escapeHtml(min.level)})입니다.
+      ${first.month}월에서 ${last.month}월까지 위험도는 ${changeText}.
+    </p>
+    <p>
+      위험 등급 이상으로 분류된 달은 ${escapeHtml(highRiskText)}입니다. 이 달에는 건조한 날씨,
+      높은 기온, 과거 산불 이력 같은 요인이 함께 작용했을 가능성이 큽니다.
+    </p>
   `;
 }
 

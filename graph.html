@@ -17,6 +17,34 @@
       </header>
 
       <section class="graph-panel">
+        <div class="graph-intro">
+          <div>
+            <h2>선택 지역의 월별 산불 위험도 변화</h2>
+            <p>
+              이 그래프는 지도에서 사용하는 같은 예측 데이터를 월별로 펼쳐서 보여줍니다.
+              점수는 0점에 가까울수록 낮은 위험, 100점에 가까울수록 높은 위험을 뜻합니다.
+            </p>
+          </div>
+          <dl class="score-guide" aria-label="위험도 점수 기준">
+            <div>
+              <dt>안전</dt>
+              <dd>0-24점</dd>
+            </div>
+            <div>
+              <dt>경고</dt>
+              <dd>25-49점</dd>
+            </div>
+            <div>
+              <dt>위험</dt>
+              <dd>50-74점</dd>
+            </div>
+            <div>
+              <dt>매우 위험</dt>
+              <dd>75-100점</dd>
+            </div>
+          </dl>
+        </div>
+
         <div class="graph-controls">
           <label class="region-control">
             <span>지역 선택</span>
@@ -28,6 +56,53 @@
         <div class="chart-wrap">
           <svg id="riskChart" role="img" aria-label="선택 지역 월별 산불 위험도 변화 그래프"></svg>
         </div>
+
+        <section class="weather-panel" aria-label="월별 기상 상세">
+          <div class="weather-head">
+            <div>
+              <h2>월별 기상 상세</h2>
+              <p>위험도 계산에 함께 사용된 기온, 습도, 강수량, 지표 온도 값을 월별로 확인합니다.</p>
+            </div>
+          </div>
+          <div class="weather-table-wrap">
+            <table class="weather-table">
+              <thead>
+                <tr>
+                  <th>월</th>
+                  <th>위험도</th>
+                  <th>등급</th>
+                  <th>평균 기온</th>
+                  <th>최고 기온</th>
+                  <th>지면 온도</th>
+                  <th>지중 온도</th>
+                  <th>깊은 지중 온도</th>
+                  <th>습도</th>
+                  <th>강수량</th>
+                </tr>
+              </thead>
+              <tbody id="weatherTableBody"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="graph-explain" aria-label="그래프 해석 설명">
+          <article class="explain-card" id="regionInsight"></article>
+          <article class="explain-card">
+            <h3>그래프 읽는 법</h3>
+            <p>
+              가로축은 예측 월, 세로축은 산불 위험도 점수입니다. 선이 위로 갈수록 해당 월의
+              위험도가 높아진다는 뜻이고, 점 색상은 지도와 같은 위험도 등급을 사용합니다.
+            </p>
+          </article>
+          <article class="explain-card">
+            <h3>예측에 반영된 정보</h3>
+            <p>
+              산불 발생 이력, 피해면적, 월별 계절성, 지역 위치, 가뭄 자료, 기상청 API의 기온과
+              강수량 자료를 함께 사용했습니다. 교육용 예측이므로 실제 재난 판단은 공식 정보를
+              함께 확인해야 합니다.
+            </p>
+          </article>
+        </section>
       </section>
     </main>
 
