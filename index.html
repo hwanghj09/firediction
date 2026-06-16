@@ -22,6 +22,24 @@
             <span>예측 월</span>
             <select id="monthSelect" aria-label="예측 월 선택"></select>
           </label>
+          <label class="filter-control">
+            <span>위험도 필터</span>
+            <select id="riskFilter" aria-label="위험도 필터 선택">
+              <option value="all">전체 보기</option>
+              <option value="안전">안전</option>
+              <option value="경고">경고</option>
+              <option value="위험">위험</option>
+              <option value="매우 위험">매우 위험</option>
+            </select>
+          </label>
+          <label class="search-control">
+            <span>지역 검색</span>
+            <div class="search-row">
+              <input id="regionSearch" type="search" list="regionSuggestions" placeholder="예: 강릉, 경기도" autocomplete="off" />
+              <button id="regionSearchButton" type="button">검색</button>
+            </div>
+          </label>
+          <datalist id="regionSuggestions"></datalist>
           <button class="reset-view-button" id="resetViewButton" type="button">지도 초기화</button>
           <a class="graph-link" id="graphLink" href="graph.html">월별 그래프 보기</a>
         </div>

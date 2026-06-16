@@ -95,7 +95,9 @@ h1 {
   justify-items: stretch;
 }
 
-.month-control {
+.month-control,
+.filter-control,
+.search-control {
   display: grid;
   gap: 6px;
   min-width: 180px;
@@ -106,13 +108,17 @@ h1 {
   box-shadow: var(--shadow);
 }
 
-.month-control span {
+.month-control span,
+.filter-control span,
+.search-control span {
   color: var(--muted);
   font-size: 0.78rem;
   font-weight: 800;
 }
 
-.month-control select {
+.month-control select,
+.filter-control select,
+.search-control input {
   height: 42px;
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -123,9 +129,38 @@ h1 {
   padding: 0 38px 0 12px;
 }
 
-.month-control select:focus {
+.search-control input {
+  width: 100%;
+  min-width: 0;
+  padding-right: 12px;
+}
+
+.search-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+.search-row button {
+  min-height: 42px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fbfdf9;
+  color: var(--muted);
+  cursor: pointer;
+  font-weight: 800;
+  padding: 0 12px;
+}
+
+.month-control select:focus,
+.filter-control select:focus,
+.search-control input:focus,
+.search-row button:hover,
+.search-row button:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 3px rgba(22, 122, 69, 0.14);
+  color: var(--accent);
+  outline: none;
 }
 
 .reset-view-button,
@@ -191,6 +226,19 @@ h1 {
 .region.selected {
   stroke: #1c2b21;
   stroke-width: 2.2;
+}
+
+.region.filtered-out {
+  opacity: 0.17;
+}
+
+.region.filtered-out.selected {
+  opacity: 0.32;
+}
+
+.region.search-hit {
+  stroke: #0f5132;
+  stroke-width: 3;
 }
 
 .legend {
@@ -332,7 +380,9 @@ h1 {
     margin-bottom: 10px;
   }
 
-  .month-control {
+  .month-control,
+  .filter-control,
+  .search-control {
     grid-column: 1 / -1;
     width: 100%;
     padding: 9px;

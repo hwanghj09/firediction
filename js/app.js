@@ -16,11 +16,17 @@ const state = {
   wheelDelta: 0,
   wheelPoint: null,
   detailLevel: "",
+  filterLevel: "all",
+  searchHitId: "",
 };
 
 const els = {
   sourceInfo: document.querySelector("#sourceInfo"),
   monthSelect: document.querySelector("#monthSelect"),
+  riskFilter: document.querySelector("#riskFilter"),
+  regionSearch: document.querySelector("#regionSearch"),
+  regionSearchButton: document.querySelector("#regionSearchButton"),
+  regionSuggestions: document.querySelector("#regionSuggestions"),
   resetViewButton: document.querySelector("#resetViewButton"),
   graphLink: document.querySelector("#graphLink"),
   koreaMap: document.querySelector("#koreaMap"),
@@ -60,6 +66,18 @@ function getRisk(region) {
 
 function colorFor(region) {
   return levelColors.get(getRisk(region).level) || "#9aa69a";
+}
+
+function regionLabel(region) {
+  return `${region.province} ${region.city}`;
+}
+
+function normalizeSearch(value) {
+  return String(value ?? "").replace(/\s+/g, "").toLowerCase();
+}
+
+function isRegionVisibleByFilter(region) {
+  return state.filterLevel === "all" || getRisk(region).level === state.filterLevel;
 }
 
 function simplifyPathData(pathData, stride) {
@@ -139,6 +157,10 @@ function renderControls() {
     .map(({ key, month }) => `<option value="${key}">${month}월</option>`)
     .join("");
   els.monthSelect.value = state.riskKey;
+  els.riskFilter.value = state.filterLevel;
+  els.regionSuggestions.innerHTML = data.regions
+    .map((region) => `<option value="${escapeHtml(regionLabel(region))}"></option>`)
+    .join("");
 }
 
 function getAvailableMonths() {
@@ -224,6 +246,19 @@ function bindEvents() {
     refresh();
   });
 
+  els.riskFilter.addEventListener("change", (event) => {
+    state.filterLevel = event.target.value;
+    refresh();
+  });
+
+  els.regionSearch.addEventListener("keydown", (event) => {
+    if (event.key === "Enter") {
+      event.preventDefault();
+      searchRegion();
+    }
+  });
+  els.regionSearchButton.addEventListener("click", searchRegion);
+
   els.koreaMap.addEventListener("pointerdown", startPan);
   els.koreaMap.addEventListener("pointermove", panMap);
   els.koreaMap.addEventListener("pointerup", endPan);
@@ -245,6 +280,8 @@ function updateMapStyles() {
     const risk = getRisk(region);
     path.style.fill = colorFor(region);
     path.classList.toggle("selected", region.id === state.selectedId);
+    path.classList.toggle("search-hit", region.id === state.searchHitId);
+    path.classList.toggle("filtered-out", !isRegionVisibleByFilter(region));
     path.setAttribute(
       "aria-label",
       `${region.province} ${region.city} 산불 위험도 ${risk.score}점 ${risk.level}`,
@@ -387,6 +424,18 @@ function resetMapView() {
   applyViewBox();
 }
 
+function focusRegion(region) {
+  if (!region?.centroid || !state.defaultViewBox) return;
+  const zoomWidth = state.defaultViewBox.width * 0.28;
+  const zoomHeight = zoomWidth * (state.defaultViewBox.height / state.defaultViewBox.width);
+  scheduleViewBox({
+    x: region.centroid[0] - zoomWidth / 2,
+    y: region.centroid[1] - zoomHeight / 2,
+    width: zoomWidth,
+    height: zoomHeight,
+  });
+}
+
 function getDetailLevel() {
   const zoom = state.defaultViewBox.width / currentViewBox().width;
   if (zoom < 1.45) return "low";
@@ -415,6 +464,37 @@ function selectRegion(id) {
   updateMapStyles();
   updateGraphLink();
   showPinnedTooltip(regionById.get(id));
+}
+
+function findRegion(query) {
+  const normalizedQuery = normalizeSearch(query);
+  if (!normalizedQuery) return null;
+
+  return (
+    data.regions.find((region) => normalizeSearch(regionLabel(region)) === normalizedQuery) ||
+    data.regions.find((region) => normalizeSearch(region.city) === normalizedQuery) ||
+    data.regions.find((region) => normalizeSearch(regionLabel(region)).includes(normalizedQuery)) ||
+    data.regions.find((region) => normalizeSearch(region.province).includes(normalizedQuery))
+  );
+}
+
+function searchRegion() {
+  const region = findRegion(els.regionSearch.value);
+  if (!region) {
+    els.regionSearch.setAttribute("aria-invalid", "true");
+    els.regionSearch.focus();
+    return;
+  }
+
+  els.regionSearch.removeAttribute("aria-invalid");
+  els.regionSearch.value = regionLabel(region);
+  state.searchHitId = region.id;
+  if (!isRegionVisibleByFilter(region)) {
+    state.filterLevel = "all";
+    els.riskFilter.value = "all";
+  }
+  selectRegion(region.id);
+  focusRegion(region);
 }
 
 function updateGraphLink() {
