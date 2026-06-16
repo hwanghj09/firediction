@@ -1,5 +1,9 @@
 # Firediction
 
+
+[ 접속링크 ]
+https://hwanghj09.github.io/firediction/
+
 산림청 산불 발생 이력, 가뭄 shapefile, 기상청 API 데이터를 이용해 시군구별 산불 위험도를 예측하고 지도에 표시하는 정적 웹사이트입니다.
 
 ## 실행
