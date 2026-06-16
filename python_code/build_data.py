@@ -30,13 +30,16 @@ from urllib.request import Request, urlopen
 
 
 ROOT = Path(__file__).resolve().parents[1]
-FIRE_CSV = next(ROOT.glob("산림청_산불통계데이터_*.csv"))
-STATUS_ZIP = ROOT / "______20260614.zip"
-MONTH_ZIP = ROOT / "______202605.zip"
 DATA_DIR = ROOT / "data"
-OUT_JSON = DATA_DIR / "risk-data.json"
-OUT_JS = DATA_DIR / "risk-data.js"
-API_MD = ROOT / "api.md"
+RAW_DATA_DIR = DATA_DIR / "raw"
+PROCESSED_DATA_DIR = DATA_DIR / "processed"
+CACHE_DATA_DIR = DATA_DIR / "cache"
+FIRE_CSV = next(RAW_DATA_DIR.glob("산림청_산불통계데이터_*.csv"))
+STATUS_ZIP = RAW_DATA_DIR / "______20260614.zip"
+MONTH_ZIP = RAW_DATA_DIR / "______202605.zip"
+OUT_JSON = PROCESSED_DATA_DIR / "risk-data.json"
+OUT_JS = PROCESSED_DATA_DIR / "risk-data.js"
+API_MD = RAW_DATA_DIR / "api.md"
 
 RANDOM_SEED = 20260615
 SIMPLIFY_TOLERANCE_METERS = 850
@@ -147,7 +150,7 @@ def extract_kma_api_urls() -> dict[str, str]:
 
     missing = [spec["endpoint"] for spec in KMA_API_SPECS.values() if spec["endpoint"] not in urls]
     if missing:
-        raise ValueError(f"Missing KMA API URLs in api.md: {', '.join(missing)}")
+        raise ValueError(f"Missing KMA API URLs in data/raw/api.md: {', '.join(missing)}")
     return urls
 
 
@@ -163,7 +166,7 @@ def kma_url_for_month(template_url: str, yyyymm: str) -> str:
 
 
 def fetch_kma_text(template_url: str, endpoint: str, yyyymm: str) -> str:
-    cache_dir = DATA_DIR / "kma-cache"
+    cache_dir = CACHE_DATA_DIR / "kma-cache"
     cache_dir.mkdir(parents=True, exist_ok=True)
     cache_path = cache_dir / f"{endpoint.replace('.php', '')}-{yyyymm}.csv"
     if cache_path.exists():
@@ -637,7 +640,8 @@ def train_model(
 
 
 def main() -> None:
-    DATA_DIR.mkdir(exist_ok=True)
+    PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+    CACHE_DATA_DIR.mkdir(parents=True, exist_ok=True)
 
     history = load_fire_history()
     status_rows = read_dbf_from_zip(STATUS_ZIP)
