@@ -25,7 +25,7 @@ python3 python_code/build_data.py
 - `data/processed/risk-data.json`
 - `data/processed/risk-data.js`
 
-전처리 스크립트는 Python 표준 라이브러리만 사용합니다. 산불 CSV는 CP949로 읽고, 가뭄 shapefile은 zip 안의 SHP/DBF를 직접 파싱합니다. `data/raw/api.md`에 있는 기상청 API 6개도 호출합니다.
+전처리 스크립트는 Python 표준 라이브러리만 사용합니다. 산불 CSV는 CP949로 읽고, 가뭄 shapefile은 zip 안의 SHP/DBF를 직접 파싱합니다. `data/raw/api.md`에 있는 기상청 API 4개도 호출합니다.
 
 ## 파일 구조
 
@@ -45,8 +45,6 @@ python3 python_code/build_data.py
 
 - 기온 월자료 `sts_ta.php`
 - 지면온도 월자료 `sts_ts.php`
-- 초상온도 월자료 `sts_tg.php`
-- 지중온도 월자료 `sts_te.php`
 - 습도 월자료 `sts_rhm.php`
 - 강수량 월자료 `sts_rn.php`
 

@@ -264,6 +264,13 @@ h1 {
   line-height: 1.55;
 }
 
+.weather-head .weather-note {
+  margin-top: 5px;
+  color: #b5483d;
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
 .weather-table-wrap {
   overflow-x: auto;
   border: 1px solid var(--line);
@@ -274,7 +281,7 @@ h1 {
 
 .weather-table {
   width: 100%;
-  min-width: 980px;
+  min-width: 820px;
   border-collapse: collapse;
   font-size: 0.86rem;
 }
@@ -320,6 +327,11 @@ h1 {
   font-size: 0.76rem;
   font-weight: 900;
   padding: 0 8px;
+}
+
+.api-error {
+  color: #b5483d;
+  font-weight: 900;
 }
 
 .graph-explain {

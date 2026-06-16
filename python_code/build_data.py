@@ -53,26 +53,9 @@ KMA_API_SPECS = {
         "endpoint": "sts_ts.php",
         "fields": ["TS_MAVG", "TS_MAX", "TS_MIN"],
     },
-    "grassTemperature": {
-        "endpoint": "sts_tg.php",
-        "fields": ["TG_MIN"],
-    },
-    "soilTemperature": {
-        "endpoint": "sts_te.php",
-        "fields": [
-            "TE005_MAVG",
-            "TE010_MAVG",
-            "TE020_MAVG",
-            "TE030_MAVG",
-            "TE050_MAVG",
-            "TE100_MAVG",
-            "TE150_MAVG",
-            "TE300_MAVG",
-        ],
-    },
     "humidity": {
         "endpoint": "sts_rhm.php",
-        "fields": ["RHM_MAVG", "RHM_MIN"],
+        "fields": ["RHM_AVG", "RHM_MIN"],
     },
     "rainfall": {
         "endpoint": "sts_rn.php",
@@ -205,18 +188,18 @@ def parse_kma_table(text: str) -> tuple[list[str], list[dict[str, str]]]:
     return header, rows
 
 
-def average_kma_fields(rows: list[dict[str, str]], fields: list[str]) -> dict[str, float]:
-    averaged: dict[str, float] = {}
+def average_kma_fields(rows: list[dict[str, str]], fields: list[str]) -> dict[str, float | None]:
+    averaged: dict[str, float | None] = {}
     for field in fields:
         values = [parse_float(row.get(field)) for row in rows if row.get(field) not in (None, "", "=")]
-        values = [value for value in values if math.isfinite(value)]
-        averaged[field] = round(statistics.mean(values), 3) if values else 0.0
+        values = [value for value in values if math.isfinite(value) and value > -90]
+        averaged[field] = round(statistics.mean(values), 3) if values else None
     return averaged
 
 
 def load_kma_monthly_climate(year: int = KMA_BASELINE_YEAR) -> dict[str, Any]:
     urls = extract_kma_api_urls()
-    by_month: dict[int, dict[str, float]] = {month: {} for month in range(1, 13)}
+    by_month: dict[int, dict[str, float | None]] = {month: {} for month in range(1, 13)}
     calls: list[dict[str, Any]] = []
 
     for api_name, spec in KMA_API_SPECS.items():
@@ -259,23 +242,35 @@ def load_kma_monthly_climate(year: int = KMA_BASELINE_YEAR) -> dict[str, Any]:
     }
 
 
-def climate_value(climate: dict[str, Any], month: int, field: str) -> float:
+def climate_value(climate: dict[str, Any], month: int, field: str) -> float | None:
     values_by_month = climate.get("byMonth", {})
     month_values = values_by_month.get(month, {})
     if field in month_values:
-        return parse_float(str(month_values[field]))
+        value = month_values[field]
+        return None if value is None else parse_float(str(value))
 
-    values = [parse_float(str(values.get(field))) for values in values_by_month.values() if field in values]
-    return statistics.mean(values) if values else 0.0
+    values = [
+        parse_float(str(month_values.get(field)))
+        for month_values in values_by_month.values()
+        if field in month_values and month_values.get(field) is not None
+    ]
+    values = [value for value in values if math.isfinite(value)]
+    return statistics.mean(values) if values else None
 
 
 def normalized_climate_value(climate: dict[str, Any], month: int, field: str, inverse: bool = False) -> float:
     values_by_month = climate.get("byMonth", {})
-    values = [parse_float(str(month_values.get(field))) for month_values in values_by_month.values() if field in month_values]
+    values = [
+        parse_float(str(month_values.get(field)))
+        for month_values in values_by_month.values()
+        if field in month_values and month_values.get(field) is not None
+    ]
     values = [value for value in values if math.isfinite(value)]
     if not values:
-        return 0.0
+        return 0.5
     value = climate_value(climate, month, field)
+    if value is None:
+        return 0.5
     min_value = min(values)
     max_value = max(values)
     if max_value == min_value:
@@ -575,10 +570,7 @@ def build_feature_factory(regions: list[dict[str, Any]], history: dict[str, Any]
         air_hot = normalized_climate_value(climate, month, "TA_MAVG")
         air_max_hot = normalized_climate_value(climate, month, "TMX")
         surface_hot = normalized_climate_value(climate, month, "TS_MAX")
-        grass_dry_cold = normalized_climate_value(climate, month, "TG_MIN", inverse=True)
-        soil_hot = normalized_climate_value(climate, month, "TE005_MAVG")
-        deep_soil_hot = normalized_climate_value(climate, month, "TE300_MAVG")
-        humidity_dry = normalized_climate_value(climate, month, "RHM_MAVG", inverse=True)
+        humidity_dry = normalized_climate_value(climate, month, "RHM_AVG", inverse=True)
         rainfall_dry = normalized_climate_value(climate, month, "RN_MSUM", inverse=True)
         return [
             math.sin(seasonal_angle),
@@ -594,9 +586,6 @@ def build_feature_factory(regions: list[dict[str, Any]], history: dict[str, Any]
             air_hot,
             air_max_hot,
             surface_hot,
-            grass_dry_cold,
-            soil_hot,
-            deep_soil_hot,
             humidity_dry,
             rainfall_dry,
         ]
@@ -731,10 +720,8 @@ def main() -> None:
                 normalized_climate_value(climate, target_month, "TA_MAVG") * 0.14
                 + normalized_climate_value(climate, target_month, "TMX") * 0.14
                 + normalized_climate_value(climate, target_month, "TS_MAX") * 0.14
-                + normalized_climate_value(climate, target_month, "TE005_MAVG") * 0.10
-                + normalized_climate_value(climate, target_month, "TE300_MAVG") * 0.08
-                + normalized_climate_value(climate, target_month, "RHM_MAVG", inverse=True) * 0.20
-                + normalized_climate_value(climate, target_month, "RN_MSUM", inverse=True) * 0.20
+                + normalized_climate_value(climate, target_month, "RHM_AVG", inverse=True) * 0.28
+                + normalized_climate_value(climate, target_month, "RN_MSUM", inverse=True) * 0.30
             )
             score = 100 * (
                 normalized_probability * 0.43
@@ -755,9 +742,7 @@ def main() -> None:
                     "airTemperature": climate_value(climate, target_month, "TA_MAVG"),
                     "maxTemperature": climate_value(climate, target_month, "TMX"),
                     "surfaceTemperature": climate_value(climate, target_month, "TS_MAX"),
-                    "soilTemperature": climate_value(climate, target_month, "TE005_MAVG"),
-                    "deepSoilTemperature": climate_value(climate, target_month, "TE300_MAVG"),
-                    "humidity": climate_value(climate, target_month, "RHM_MAVG"),
+                    "humidity": climate_value(climate, target_month, "RHM_AVG"),
                     "rainfall": climate_value(climate, target_month, "RN_MSUM"),
                 },
             }
@@ -818,8 +803,6 @@ def main() -> None:
                 "가뭄 단계",
                 "기온 API",
                 "지면온도 API",
-                "초상온도 API",
-                "지중온도 API",
                 "습도 API",
                 "강수량 API",
                 "지도상 위치",

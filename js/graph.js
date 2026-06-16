@@ -159,8 +159,12 @@ function renderChart(points) {
 }
 
 function weatherValue(weather, key, unit = "", digits = 1) {
-  const value = Number(weather?.[key]);
-  if (!Number.isFinite(value)) return "-";
+  const rawValue = weather?.[key];
+  if (rawValue === null || rawValue === undefined || rawValue === "") {
+    return "<span class=\"api-error\">API 오류</span>";
+  }
+  const value = Number(rawValue);
+  if (!Number.isFinite(value)) return "<span class=\"api-error\">API 오류</span>";
   return `${formatNumber(value, digits)}${unit}`;
 }
 
@@ -177,8 +181,6 @@ function renderWeatherTable(points) {
           <td>${weatherValue(weather, "airTemperature", "°C")}</td>
           <td>${weatherValue(weather, "maxTemperature", "°C")}</td>
           <td>${weatherValue(weather, "surfaceTemperature", "°C")}</td>
-          <td>${weatherValue(weather, "soilTemperature", "°C")}</td>
-          <td>${weatherValue(weather, "deepSoilTemperature", "°C")}</td>
           <td>${weatherValue(weather, "humidity", "%")}</td>
           <td>${weatherValue(weather, "rainfall", "mm")}</td>
         </tr>

@@ -53,6 +53,12 @@ function formatPercent(value) {
   return `${(Number(value) * 100).toFixed(1)}%`;
 }
 
+function formatWeatherValue(value, unit) {
+  if (value === null || value === undefined || value === "") return "API 오류";
+  const number = Number(value);
+  return Number.isFinite(number) ? `${formatNumber(number, 1)}${unit}` : "API 오류";
+}
+
 function escapeHtml(value) {
   return String(value ?? "")
     .replaceAll("&", "&amp;")
@@ -352,15 +358,15 @@ function renderDetailPanel() {
     <div class="detail-grid" aria-label="선택 지역 기상 요약">
       <div>
         <span>기온</span>
-        <strong>${formatNumber(weather.airTemperature, 1)}°C</strong>
+        <strong>${formatWeatherValue(weather.airTemperature, "°C")}</strong>
       </div>
       <div>
         <span>습도</span>
-        <strong>${formatNumber(weather.humidity, 1)}%</strong>
+        <strong>${formatWeatherValue(weather.humidity, "%")}</strong>
       </div>
       <div>
         <span>강수량</span>
-        <strong>${formatNumber(weather.rainfall, 1)}mm</strong>
+        <strong>${formatWeatherValue(weather.rainfall, "mm")}</strong>
       </div>
     </div>
 
